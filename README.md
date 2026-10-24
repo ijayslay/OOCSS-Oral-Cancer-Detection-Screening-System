@@ -28,6 +28,16 @@ The labels mean:
 
 The trained project weights are in `models/`. On startup the code first constructs the ResNet-50 architecture using TorchVision's standard ImageNet checkpoint, then loads the OOCSS weights. TorchVision caches that checkpoint after its first download.
 
+## Get the code and model
+
+Install [Git LFS](https://git-lfs.com/) before cloning so Git downloads the ResNet-50 model file instead of leaving an LFS pointer in its place. Then run:
+
+```bash
+git lfs install
+git clone https://github.com/ijayslay/OOCSS-Oral-Cancer-Detection-Screening-System.git
+cd OOCSS-Oral-Cancer-Detection-Screening-System
+```
+
 ## Quick start: web app
 
 Run these commands from the repository root.
