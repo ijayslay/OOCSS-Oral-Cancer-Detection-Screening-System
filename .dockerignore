@@ -1,0 +1,13 @@
+.git/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+.kaggle/
+.vscode/
+.idea/
+data/
+outputs/
+static/*.docx

@@ -31,18 +31,18 @@ import config
 
 # ── Model builder ─────────────────────────────────────────────────────────────
 
-def build_resnet50() -> nn.Module:
+def build_resnet50(pretrained: bool = True) -> nn.Module:
     """
-    Loads a pre-trained ResNet-50, freezes early layers, and replaces
-    the classifier head with a 4-class output.
+    Loads a ResNet-50, optionally initializes it with ImageNet weights,
+    freezes early layers, and replaces the classifier head with a 4-class output.
 
     Returns the model (on CPU — as configured).
     """
     # ── Step 1: Load ResNet-50 with ImageNet weights ──────────────────────
-    # weights=DEFAULT downloads the best available pre-trained weights.
-    # First run: downloads ~100 MB.  Subsequent runs: uses cache.
-    print("[→] Loading ResNet-50 with ImageNet pre-trained weights …")
-    weights = models.ResNet50_Weights.DEFAULT
+    # Training starts from ImageNet weights by default. Inference can skip
+    # that download because the trained project checkpoint replaces them.
+    weights = models.ResNet50_Weights.DEFAULT if pretrained else None
+    print("[→] Loading ResNet-50 architecture …")
     model   = models.resnet50(weights=weights)
 
     # ── Step 2: Freeze layers we don't want to update ─────────────────────

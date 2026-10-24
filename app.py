@@ -16,7 +16,6 @@ import torch
 import numpy as np
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from torchvision import transforms
@@ -29,15 +28,10 @@ from utils.risk_model import build_feature_vector, load_rf, score_to_triage
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = FastAPI(title="OOCSS — Oral Cancer Screening API", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Serve frontend static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Serve frontend static files from the project directory regardless of cwd.
+STATIC_DIR = config.BASE_DIR / "static"
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ── Load models at startup ─────────────────────────────────────────────────────
 cnn_model = None
@@ -47,7 +41,7 @@ rf_model  = None
 async def load_models():
     global cnn_model, rf_model
     print("[→] Loading CNN model …")
-    cnn_model = build_resnet50()
+    cnn_model = build_resnet50(pretrained=False)
     if config.CNN_WEIGHTS_FILE.exists():
         cnn_model.load_state_dict(
             torch.load(config.CNN_WEIGHTS_FILE, map_location=config.DEVICE)
@@ -74,7 +68,7 @@ INFER_TRANSFORM = transforms.Compose([
 # ── Routes ─────────────────────────────────────────────────────────────────────
 @app.get("/")
 async def serve_frontend():
-    return FileResponse("static/index.html")
+    return FileResponse(STATIC_DIR / "index.html")
 
 @app.get("/health")
 async def health():
@@ -100,8 +94,15 @@ async def predict(
 
     # ── Read & validate image ──────────────────────────────────────────────
     try:
-        contents = await file.read()
-        image    = Image.open(io.BytesIO(contents)).convert("RGB")
+        contents = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(contents) > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, "Image must be 10 MB or smaller.")
+        with Image.open(io.BytesIO(contents)) as uploaded_image:
+            if uploaded_image.format not in {"JPEG", "PNG", "WEBP"}:
+                raise HTTPException(415, "Upload a JPG, PNG, or WEBP image.")
+            image = uploaded_image.convert("RGB")
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(400, "Invalid image file.")
 

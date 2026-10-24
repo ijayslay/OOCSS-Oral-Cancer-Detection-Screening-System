@@ -24,9 +24,9 @@ The labels mean:
 
 - Python **3.10 or 3.11** (recommended; the pinned PyTorch packages in `requirements.txt` target these versions)
 - Git LFS to clone or push the ResNet-50 model file tracked in this repository
-- Internet access for the first model startup if the standard ResNet-50 ImageNet checkpoint is not already cached
+- Internet access for training if the standard ResNet-50 ImageNet checkpoint is not already cached. Running the included trained models does not need that extra download.
 
-The trained project weights are in `models/`. On startup the code first constructs the ResNet-50 architecture using TorchVision's standard ImageNet checkpoint, then loads the OOCSS weights. TorchVision caches that checkpoint after its first download.
+The trained project weights are in `models/`. The web app loads the saved OOCSS weights directly. Training still initializes ResNet-50 with TorchVision's ImageNet checkpoint.
 
 ## Get the code and model
 
@@ -71,6 +71,17 @@ python predict.py --image path/to/oral_photo.jpg --age 52 --sex 1 --tobacco 2 --
 ```
 
 The accepted values are defined by the argument help (`python predict.py --help`). Do not enter identifiable patient information into this research prototype.
+
+## Deploy to Hugging Face Spaces
+
+The repository includes a Docker setup for Hugging Face Spaces. It uses Python 3.11 and CPU-only PyTorch wheels, serves the app on port `7860`, and excludes datasets and local reports from the upload. Hugging Face currently requires a PRO subscription or paid compute for Docker Spaces running on basic CPU hardware; check your account's plan before deployment.
+
+1. Install the Hugging Face Hub tools with `python -m pip install huggingface_hub`, then authenticate locally with a **write** token using `hf auth login`. Keep the token private; do not add it to this repository.
+2. Create a new Space ID under your Hugging Face account, such as `your-account/oocss-screening-demo`.
+3. From the project directory, run `python -m pip install huggingface_hub`, then `python deploy_to_hf.py your-account/oocss-screening-demo`.
+4. Wait for the Docker build to finish on the Space page. The health endpoint is `/health`.
+
+The Space is public so anyone can open the demo. Uploaded images and optional risk factors are sent to the hosted server for inference; this app does not retain them after each request. Do not submit identifiable or private patient data. This project is an academic prototype and is not a diagnostic service.
 
 ## Model training
 
